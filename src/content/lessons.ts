@@ -19,20 +19,31 @@ export interface Demo {
   play?: 'best' | 'hold'
   /** Draw the line of sight and its compass bearing in the overhead view. */
   showBearing?: boolean
+  /** Deliberately sits in a doubt band, to teach the "if in doubt" rule. */
+  doubtful?: boolean
 }
 
-export interface Lesson {
-  id: string
-  group: string
-  title: string
-  /** Quick-reference rows: who stands on, who gives way. */
-  quick?: { standOn: string; giveWay: string }
-  quickNote?: string
+export interface Section {
+  /** Shown above the section on a page with several of them. */
+  heading?: string
   cite: string
   body: string[]
   remember?: string
   demos: Demo[]
   panel?: PanelId
+}
+
+export interface Lesson extends Section {
+  id: string
+  group: string
+  /** Short name for the quick reference: for a right-of-way rule, whoever stands on. */
+  title: string
+  /** The page heading; the title alone when omitted. */
+  heading?: string
+  /** The situation the rule covers, shown beside the title. */
+  when?: string
+  /** Further sections on the same page (the overview). */
+  sections?: Section[]
   /** Quiz topics that drill this lesson. */
   topics?: Topic[]
 }
@@ -87,15 +98,17 @@ const channelMarks = (up: number): Mark[] => {
 
 export const LESSONS: Lesson[] = [
   {
-    id: 'risk',
-    group: 'Before the rules apply',
-    title: 'Is there a risk of collision?',
-    quickNote: 'Constant bearing, decreasing range = collision course',
-    cite: 'Rules 5 and 7',
+    id: 'overview',
+    group: 'Basics',
+    title: 'Overview',
+    when: 'Collision check, lights, sound signals',
+    heading: 'Checking for a collision',
+    cite: 'Rules 5, 7, 16 and 17',
     body: [
-      'Every rule that follows begins “when there is risk of collision”. So the first job, always, is to keep a proper lookout and decide whether the risk exists.',
-      'The test is simple: watch the other vessel against something fixed on your own boat — a stanchion, a shroud. If she stays lined up with it while getting closer, her compass bearing is not changing and you will meet. If she steadily slides forward or aft along your rail, she will pass ahead or astern.',
-      'If you are not sure, assume the risk exists. Rule 7 says so in as many words.',
+      'Every right-of-way rule begins “when there is risk of collision”, so the first job is to decide whether the risk exists. Watch the other vessel against something fixed on your own boat — a stanchion, a shroud. If she stays lined up with it while getting closer, her compass bearing is not changing and you will meet. If she slides steadily forward or aft, she will pass ahead or astern. If you are not sure, assume the risk exists.',
+      'When there is a risk, one vessel is the give-way vessel and the other is the stand-on vessel. The rules never say “right of way”.',
+      'Give way: take early and obvious action to keep well clear. One big change of course beats several small ones, and passing astern beats crossing ahead.',
+      'Stand on: hold your course and speed so that you are predictable. If the other vessel is plainly not keeping clear you may act, and once she can no longer avoid a collision on her own you must.',
     ],
     remember: 'Constant bearing + decreasing range = collision.',
     demos: [
@@ -114,45 +127,92 @@ export const LESSONS: Lesson[] = [
         showBearing: true,
       },
     ],
-  },
-  {
-    id: 'duties',
-    group: 'Before the rules apply',
-    title: 'Give-way and stand-on',
-    quickNote: 'Give way: early and obvious. Stand on: hold course and speed',
-    cite: 'Rules 2, 8, 16 and 17',
-    body: [
-      'The rules never use the words “right of way”. In each meeting one vessel is the give-way vessel and the other is the stand-on vessel, and both have a job.',
-      'Give-way vessel (Rule 16): take early and substantial action to keep well clear. A big, obvious change of course is better than a series of small ones, because the other skipper has to be able to see what you are doing. Pass astern of her; avoid crossing ahead.',
-      'Stand-on vessel (Rule 17): hold your course and speed, so that you are predictable. If it becomes clear the other vessel is not keeping clear you may act, and when a collision can no longer be avoided by her action alone you must.',
-      'Rule 2 sits above all of it: nothing in the rules excuses you from doing whatever it takes to avoid a collision. Nobody has the right to hit a vessel that gets it wrong.',
-    ],
-    remember: 'Give way early and obviously. Stand on predictably — but never into a collision.',
-    demos: [
+    sections: [
       {
-        label: 'You give way',
-        caption: 'One clear turn to starboard, held until you are past her stern, then back on course.',
-        scenario: enc(motoring(0), motorboat(250, 5), 26),
-        expect: { rule: 'crossing', you: 'give-way' },
+        heading: 'Navigation lights',
+        cite: 'Rules 21–27',
+        body: [
+          'At night a vessel’s lights tell you which way she is pointing. Each shines over a fixed arc: red sidelight from dead ahead round to 22.5° abaft the port beam, green the same to starboard, and a white sternlight covering the 135° behind.',
+          'A sailboat under sail shows only those three. A power-driven vessel adds a white masthead light shining forward — so white above a colored light means engine.',
+          'Special vessels show all-round lights in a vertical line. Trawling: green over white. Restricted in ability to maneuver: red, white, red. Not under command: red over red.',
+        ],
+        remember: 'Red over red, the captain is dead. Red-white-red, restricted ahead. Green over white, trawling at night.',
+        panel: 'lights-chart',
+        demos: [
+          {
+            label: 'Red + white',
+            caption: 'A red light with a white one above it, on your starboard bow: the port side of a power-driven vessel crossing from your starboard. You are motoring, so you give way. Red = stop.',
+            scenario: enc(motoring(0), motorboat(265, 5), 24, 0, { night: true }),
+            expect: { rule: 'crossing', you: 'give-way' },
+          },
+          {
+            label: 'Green + white',
+            caption: 'Green with white above, on your port bow: the starboard side of a power-driven vessel. You are on her starboard side, so you stand on.',
+            scenario: enc(motoring(0), motorboat(95, 5), 24, 0, { night: true }),
+            expect: { rule: 'crossing', you: 'stand-on' },
+          },
+          {
+            label: 'Red, green and white',
+            caption: 'Both sidelights and a masthead light: a power-driven vessel pointing straight at you. Head-on. Turn to starboard.',
+            scenario: enc(motoring(0), motorboat(180, 5), 20, 1, { night: true }),
+            expect: { rule: 'head-on', you: 'give-way' },
+          },
+          {
+            label: 'Red alone',
+            caption: 'A single red light and no white above it: the port side of a vessel under sail. She is on starboard tack; you are on port. You keep clear.',
+            scenario: enc(sailing(-55), sailing(60), 24, 0, { night: true }),
+            expect: { rule: 'sail-opposite-tack', you: 'give-way' },
+          },
+          {
+            label: 'One white light',
+            caption: 'A single white light ahead that you are catching up with: a sternlight. You are overtaking, so you keep clear.',
+            scenario: enc(sailing(100, 3.6), v('power', 'sloop', 248, 1.8), 40, 0, { night: true }),
+            expect: { rule: 'overtaking', you: 'give-way' },
+          },
+          {
+            label: 'Green over white',
+            caption: 'Green over white in a vertical line: a trawler with her gear down. You keep clear of her, even under sail.',
+            scenario: enc(sailing(-80), v('fishing', 'trawler', 350, 1.8), 28, 0, { night: true }),
+            expect: { rule: 'hierarchy', you: 'give-way' },
+          },
+          {
+            label: 'Red, white, red',
+            caption: 'Red-white-red in a vertical line: restricted in her ability to maneuver. You keep clear.',
+            scenario: enc(motoring(20), v('ram', 'dredger', 290, 0.5), 38, -5, { night: true }),
+            expect: { rule: 'hierarchy', you: 'give-way' },
+          },
+          {
+            label: 'Red over red',
+            caption: 'Two reds in a vertical line and no masthead light: not under command. Keep well away.',
+            scenario: enc(sailing(-60), v('nuc', 'ship', 250, 0.6), 40, 0, { night: true }),
+            expect: { rule: 'hierarchy', you: 'give-way' },
+          },
+        ],
       },
       {
-        label: 'You stand on',
-        caption: 'You hold course and speed. She turns behind you. Keep watching until she is past.',
-        scenario: enc(motoring(0), motorboat(110, 5), 26),
-        expect: { rule: 'crossing', you: 'stand-on' },
+        heading: 'Sound signals',
+        cite: 'Rules 32–35',
+        body: [
+          'A short blast lasts about one second; a prolonged blast four to six. Power-driven vessels in sight of one another signal their maneuvers; in fog every vessel signals at least every two minutes.',
+        ],
+        remember: 'Five or more short blasts: “I don’t understand what you are doing — danger.”',
+        panel: 'signals',
+        demos: [],
       },
     ],
   },
   {
     id: 'opposite-tacks',
     group: 'Sail meets sail',
-    title: 'Opposite tacks: port gives way',
-    quick: { standOn: 'Starboard tack sail', giveWay: 'Port tack sail' },
+    title: 'Starboard tack',
+    when: 'opposite tacks',
+    heading: 'Starboard tack stands on',
     cite: 'Rule 12(a)(i)',
     body: [
       'A sailboat’s tack is named for the side the wind is coming over. Wind on your right cheek: starboard tack. Wind on your left: port tack. The boom is always on the other side — so if your boom is out to starboard, you are on port tack.',
       'When two sailboats on opposite tacks meet, the port-tack boat keeps out of the way. It does not matter who is close-hauled, who is running, or who is faster.',
       'The usual way to keep clear is to bear away and pass astern of the starboard-tack boat (“ducking”). Tacking away works too if you do it early.',
+      'If you are on port tack and can’t tell which tack a boat to windward is on — she is running square, or it is dark — assume she is on starboard and keep clear.',
     ],
     remember: 'Boom on the starboard side? You are on port tack — you give way.',
     topics: ['sail-opposite-tack'],
@@ -175,14 +235,21 @@ export const LESSONS: Lesson[] = [
         scenario: enc(sailing(-140), sailing(65), 24),
         expect: { rule: 'sail-opposite-tack', you: 'give-way' },
       },
+      {
+        label: 'Port tack, not sure of her tack',
+        caption: 'You are on port tack. She is square to the wind and you can’t make out which side her boom is on. Assume she is on starboard and keep clear — here, by tacking away early.',
+        scenario: enc(sailing(-50), sailing(176), 24),
+        expect: { rule: 'sail-opposite-tack', you: 'give-way' },
+        doubtful: true,
+      },
     ],
   },
   {
     id: 'same-tack',
     group: 'Sail meets sail',
-    title: 'Same tack: windward gives way',
-    quick: { standOn: 'Leeward sail', giveWay: 'Windward sail' },
-    quickNote: 'if both on the same tack',
+    title: 'Leeward boat',
+    when: 'same tack',
+    heading: 'The leeward boat stands on',
     cite: 'Rule 12(a)(ii)',
     body: [
       'When both boats have the wind on the same side, tack can’t separate them. Instead, the boat that is to windward — closer to where the wind is coming from — keeps out of the way of the boat to leeward.',
@@ -207,31 +274,11 @@ export const LESSONS: Lesson[] = [
     ],
   },
   {
-    id: 'in-doubt',
-    group: 'Sail meets sail',
-    title: 'On port tack and not sure? Give way',
-    quickNote: 'Port tack, can’t tell her tack: keep clear',
-    cite: 'Rule 12(a)(iii)',
-    body: [
-      'If you are on port tack and you see a sailboat to windward but cannot tell which tack she is on, you keep out of her way.',
-      'This happens more often than you would think: a boat running dead downwind under a spinnaker, or at night, or with the mainsail hidden behind a big headsail.',
-      'It follows from the first two rules. If she turns out to be on starboard, you were give-way as the port-tack boat. If she turns out to be on port, she is the windward boat and... she should keep clear — but you can’t know that, so you act.',
-    ],
-    remember: 'Port tack + doubt = you keep clear.',
-    demos: [
-      {
-        label: 'Boat running down from windward',
-        caption: 'You are on port tack. She is square to the wind and you can’t make out which side her boom is on. Assume she is on starboard and keep clear — here, by tacking away early.',
-        scenario: enc(sailing(-50), sailing(176), 24),
-        expect: { rule: 'sail-opposite-tack', you: 'give-way' },
-      },
-    ],
-  },
-  {
     id: 'overtaking',
     group: 'Any two vessels',
-    title: 'Overtaking: the overtaker keeps clear',
-    quick: { standOn: 'Overtaken', giveWay: 'Overtaking' },
+    title: 'Vessel being overtaken',
+    when: 'overtaking',
+    heading: 'The vessel being overtaken stands on',
     cite: 'Rule 13',
     body: [
       'Any vessel overtaking another keeps out of her way. This rule beats every rule about types of vessel: a sailboat overtaking a motorboat must keep clear of it.',
@@ -265,9 +312,9 @@ export const LESSONS: Lesson[] = [
   {
     id: 'head-on',
     group: 'Power meets power',
-    title: 'Head-on: both turn to starboard',
-    quick: { standOn: '—', giveWay: 'Both: turn to starboard' },
-    quickNote: 'pass “port to port”',
+    title: 'Neither: both turn to starboard',
+    when: 'head-on',
+    heading: 'Head-on: both turn to starboard',
     cite: 'Rule 14',
     body: [
       'This rule and the next apply when both vessels are power-driven — including you, any time your engine is driving the boat.',
@@ -288,8 +335,9 @@ export const LESSONS: Lesson[] = [
   {
     id: 'crossing',
     group: 'Power meets power',
-    title: 'Crossing: give way to starboard',
-    quick: { standOn: 'Vessel on the other’s starboard side', giveWay: 'Vessel with the other to starboard' },
+    title: 'Vessel on the right',
+    when: 'crossing',
+    heading: 'The vessel on the right stands on',
     cite: 'Rule 15',
     body: [
       'When two power-driven vessels are crossing, the one that has the other on her own starboard side keeps out of the way.',
@@ -317,8 +365,9 @@ export const LESSONS: Lesson[] = [
   {
     id: 'sail-power',
     group: 'Different kinds of vessel',
-    title: 'Power gives way to sail',
-    quick: { standOn: 'Sail only', giveWay: 'Power driven' },
+    title: 'Sail',
+    when: 'sail meets power',
+    heading: 'Sail stands on over power',
     cite: 'Rule 18(a), Rule 3',
     body: [
       'A power-driven vessel keeps out of the way of a sailing vessel.',
@@ -346,8 +395,9 @@ export const LESSONS: Lesson[] = [
   {
     id: 'pecking-order',
     group: 'Different kinds of vessel',
-    title: 'The pecking order',
-    quick: { standOn: 'Restricted', giveWay: 'Maneuverable' },
+    title: 'Less maneuverable vessel',
+    when: 'the pecking order',
+    heading: 'The less maneuverable vessel stands on',
     cite: 'Rule 18',
     body: [
       'Power gives way to sail because a motorboat is the more maneuverable of the two. The same idea continues up the scale: the vessel that can get out of the way more easily does.',
@@ -383,8 +433,9 @@ export const LESSONS: Lesson[] = [
   {
     id: 'narrow-channel',
     group: 'Different kinds of vessel',
-    title: 'Narrow channels',
-    quickNote: 'Keep right; never impede a ship in the channel',
+    title: 'Ship confined to the channel',
+    when: 'narrow channels',
+    heading: 'Keep clear of a ship confined to the channel',
     cite: 'Rule 9',
     body: [
       'In a narrow channel, keep as near to the outer edge on your starboard side as is safe.',
@@ -408,8 +459,9 @@ export const LESSONS: Lesson[] = [
   {
     id: 'lateral-marks',
     group: 'Channel markers',
-    title: 'Lateral marks: the sides of the channel',
-    quickNote: 'Red and green marks: which side to leave them',
+    title: 'Lateral marks',
+    when: 'red and green',
+    heading: 'Lateral marks: the sides of the channel',
     cite: 'IALA buoyage, Regions A and B',
     body: [
       'Red and green lateral marks show the edges of a channel. They are laid out for a vessel coming in from sea (or heading upstream). Going the other way, everything swaps sides.',
@@ -440,8 +492,9 @@ export const LESSONS: Lesson[] = [
   {
     id: 'preferred-marks',
     group: 'Channel markers',
-    title: 'Preferred-channel marks: where the channel splits',
-    quickNote: 'Red-and-green banded marks: follow the main color',
+    title: 'Preferred-channel marks',
+    when: 'red-and-green banded',
+    heading: 'Preferred-channel marks: where the channel splits',
     cite: 'IALA buoyage, Regions A and B',
     body: [
       'Where a channel divides, a mark banded in both red and green stands at the junction. You can pass either side of it, but one side is the preferred (main) channel.',
@@ -463,86 +516,6 @@ export const LESSONS: Lesson[] = [
         scenario: markDemo('pref-port', 'returning', -2),
       },
     ],
-  },
-  {
-    id: 'lights',
-    group: 'Lights and sound',
-    title: 'Reading navigation lights',
-    quickNote: 'Red = port, green = starboard, white = stern',
-    cite: 'Rules 21–27',
-    body: [
-      'At night you can’t see which way a vessel is pointing, so her lights tell you. Each one shines over a fixed arc: red sidelight from dead ahead round to 22.5° abaft the port beam, green the same to starboard, and a white sternlight covering the 135° behind.',
-      'That is why the overtaking sector is “more than 22.5° abaft the beam”: it is exactly where you see her sternlight and neither sidelight.',
-      'A sailboat under sail shows only those three. A power-driven vessel adds a white masthead light shining forward over the same arc as both sidelights — so a white light above a colored one means engine. A ship over 50 m carries two, the aft one higher.',
-      'Special vessels show all-round lights in a vertical line. Trawling: green over white. Restricted in ability to maneuver: red, white, red. Not under command: red over red.',
-    ],
-    remember: 'Red over red, the captain is dead. Red-white-red, restricted ahead. Green over white, trawling at night.',
-    panel: 'lights-chart',
-    demos: [
-      {
-        label: 'Red + white',
-        caption: 'A red light with a white one above it, on your starboard bow: the port side of a power-driven vessel crossing from your starboard. You are motoring, so you give way. Red = stop.',
-        scenario: enc(motoring(0), motorboat(265, 5), 24, 0, { night: true }),
-        expect: { rule: 'crossing', you: 'give-way' },
-      },
-      {
-        label: 'Green + white',
-        caption: 'Green with white above, on your port bow: the starboard side of a power-driven vessel. You are on her starboard side, so you stand on.',
-        scenario: enc(motoring(0), motorboat(95, 5), 24, 0, { night: true }),
-        expect: { rule: 'crossing', you: 'stand-on' },
-      },
-      {
-        label: 'Red, green and white',
-        caption: 'Both sidelights and a masthead light: a power-driven vessel pointing straight at you. Head-on. Turn to starboard.',
-        scenario: enc(motoring(0), motorboat(180, 5), 20, 1, { night: true }),
-        expect: { rule: 'head-on', you: 'give-way' },
-      },
-      {
-        label: 'Red alone',
-        caption: 'A single red light and no white above it: the port side of a vessel under sail. She is on starboard tack; you are on port. You keep clear.',
-        scenario: enc(sailing(-55), sailing(60), 24, 0, { night: true }),
-        expect: { rule: 'sail-opposite-tack', you: 'give-way' },
-      },
-      {
-        label: 'One white light',
-        caption: 'A single white light ahead that you are catching up with: a sternlight. You are overtaking, so you keep clear.',
-        scenario: enc(sailing(100, 3.6), v('power', 'sloop', 248, 1.8), 40, 0, { night: true }),
-        expect: { rule: 'overtaking', you: 'give-way' },
-      },
-      {
-        label: 'Green over white',
-        caption: 'Green over white in a vertical line: a trawler with her gear down. You keep clear of her, even under sail.',
-        scenario: enc(sailing(-80), v('fishing', 'trawler', 350, 1.8), 28, 0, { night: true }),
-        expect: { rule: 'hierarchy', you: 'give-way' },
-      },
-      {
-        label: 'Red, white, red',
-        caption: 'Red-white-red in a vertical line: restricted in her ability to maneuver. You keep clear.',
-        scenario: enc(motoring(20), v('ram', 'dredger', 290, 0.5), 38, -5, { night: true }),
-        expect: { rule: 'hierarchy', you: 'give-way' },
-      },
-      {
-        label: 'Red over red',
-        caption: 'Two reds in a vertical line and no masthead light: not under command. Keep well away.',
-        scenario: enc(sailing(-60), v('nuc', 'ship', 250, 0.6), 40, 0, { night: true }),
-        expect: { rule: 'hierarchy', you: 'give-way' },
-      },
-    ],
-  },
-  {
-    id: 'signals',
-    group: 'Lights and sound',
-    title: 'Sound signals',
-    quickNote: 'One short = starboard, two = port, five = danger',
-    cite: 'Rules 32–35',
-    body: [
-      'A short blast lasts about one second; a prolonged blast four to six seconds.',
-      'Maneuvering signals are made by power-driven vessels in sight of one another. Under the International Rules they state what you are doing; under the US Inland Rules the same signals propose a passing and the other vessel answers with the same signal to agree.',
-      'In fog or other restricted visibility every vessel makes a signal at least every two minutes. Note that a sailboat under sail makes the same signal as the other hampered vessels: one prolonged followed by two short.',
-    ],
-    remember: 'Five or more short blasts: “I don’t understand what you are doing — danger.”',
-    panel: 'signals',
-    demos: [],
   },
 ]
 

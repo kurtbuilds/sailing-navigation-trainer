@@ -7,7 +7,7 @@ import { explain } from './explain'
 import { LESSONS } from './lessons'
 
 describe('lesson demonstrations', () => {
-  const demos = LESSONS.flatMap((l) => l.demos.map((d) => ({ lesson: l.id, ...d })))
+  const demos = LESSONS.flatMap((l) => [l, ...(l.sections ?? [])].flatMap((sec) => sec.demos.map((d) => ({ lesson: l.id, ...d }))))
 
   test.each(demos.map((d) => [`${d.lesson} / ${d.label}`, d] as const))('%s', (_name, d) => {
     const s = d.scenario
@@ -20,9 +20,9 @@ describe('lesson demonstrations', () => {
       const v = classify(s)
       expect(d.expect).toBeDefined()
       expect({ rule: v.rule, you: v.you }).toEqual(d.expect)
-      // The "in doubt" lesson is deliberately doubtful; nothing else may be.
+      // The "in doubt" demonstration is deliberately doubtful; nothing else may be.
       const problems = solved.kind === 'encounter' ? solved.res.problems : []
-      if (d.lesson !== 'in-doubt') expect(problems).toEqual([])
+      if (!d.doubtful) expect(problems).toEqual([])
       expect(cpa(s.you, s.other).d).toBeLessThan(12)
     }
     expect(solved.acceptable.length).toBeGreaterThan(0)

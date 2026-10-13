@@ -28,17 +28,17 @@ export interface RuleCard {
 
 export const CARDS: Record<CardId, RuleCard> = {
   'sail-opposite-tack': {
-    title: 'Port tack gives way to starboard tack',
+    title: 'Starboard tack stands on',
     rule: 'When two sailboats have the wind on different sides, the one with the wind on her port side keeps out of the way.',
     cite: 'Rule 12(a)(i)',
   },
   'sail-same-tack': {
-    title: 'Windward boat gives way to leeward boat',
+    title: 'The leeward boat stands on',
     rule: 'When two sailboats have the wind on the same side, the one to windward keeps out of the way of the one to leeward.',
     cite: 'Rule 12(a)(ii)',
   },
   overtaking: {
-    title: 'The overtaking vessel keeps clear',
+    title: 'The vessel being overtaken stands on',
     rule: 'Any vessel coming up on another from more than 22.5° abaft her beam keeps out of the way until she is past and clear — sail or power, it makes no difference.',
     cite: 'Rule 13',
   },
@@ -48,22 +48,22 @@ export const CARDS: Record<CardId, RuleCard> = {
     cite: 'Rule 14',
   },
   crossing: {
-    title: 'Crossing under power: give way to the vessel on your starboard side',
+    title: 'Crossing under power: the vessel on the right stands on',
     rule: 'When two power-driven vessels cross, the one that has the other on her own starboard side keeps out of the way, and avoids crossing ahead.',
     cite: 'Rule 15',
   },
   'sail-vs-power': {
-    title: 'Power gives way to sail',
+    title: 'Sail stands on over power',
     rule: 'A power-driven vessel keeps out of the way of a sailing vessel. A sailboat with her engine driving her is a power-driven vessel.',
     cite: 'Rule 18(a), Rule 3',
   },
   hierarchy: {
-    title: 'The pecking order: give way to less maneuverable vessels',
+    title: 'The less maneuverable vessel stands on',
     rule: 'Not under command → restricted in ability to maneuver → fishing → sailing → power-driven. Each keeps out of the way of everything earlier in the list.',
     cite: 'Rule 18',
   },
   'narrow-channel': {
-    title: 'Do not impede a vessel confined to a narrow channel',
+    title: 'Keep clear of a ship confined to the channel',
     rule: 'A sailing vessel, or any vessel under 20 m, shall not impede a vessel that can safely navigate only inside the channel.',
     cite: 'Rule 9(b)',
   },

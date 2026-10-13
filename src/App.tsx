@@ -57,7 +57,7 @@ export function App() {
   return (
     <>
       <header className="topbar">
-        <a className="brand" href="#/learn/risk">
+        <a className="brand" href="#/learn/overview">
           <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden>
             <path d="M16 3v19M17 4l9 17h-9zM14.5 8l-7 13h7z" fill="currentColor" />
             <path d="M5 24h22l-3.5 4h-15z" fill="#f2b544" />
